@@ -109,6 +109,39 @@ sl-eval   adapter_path=checkpoints/cat_qwen25_v_teacher_nec_train_s1 \
           run_name=cat_qwen25_v_teacher_nec_eval_s1
 ```
 
+## Screen arbitrary concepts for transfer
+
+[`notebooks/figure5_concept_transfer.ipynb`](notebooks/figure5_concept_transfer.ipynb)
+generalizes the Figure 5a steering screen to lists of animals or trees with
+`allenai/OLMo-2-1124-7B-Instruct`. Vector extraction uses paired system/no-system
+activations on 1,024 diverse semantic instructions rather than number-sequence
+prompts; the layer/alpha sweep and positive/negative/off-topic specificity gate
+otherwise follow the repository's zoo experiment.
+
+```bash
+uv sync
+uv run --with jupyterlab jupyter lab notebooks/figure5_concept_transfer.ipynb
+```
+
+```python
+from subliminal.transfer_predictor import ANIMALS, TransferPredictor, predict_transfer
+
+predictor = TransferPredictor()  # lazy: loads OLMo-2 on the first uncached call
+predictions = predict_transfer(ANIMALS, domain="animals", predictor=predictor)
+predictions
+```
+
+The returned `clean_peak_pos_rate` is the continuous Figure-5-style score.
+Figure 5a established the one-sided result that traits with zero steering failed
+to transfer, but did not provide a calibrated success cutoff.
+`passes_zero_steering_screen` preserves that paper-style absolute-rate test;
+`steering_effect_detected` additionally checks that steering improved on the
+unsteered baseline. By default, a positive clean rate with positive lift is
+`not_ruled_out` and leaves `predicted_transfer=None`; zero steering or no lift is
+`unlikely`. A binary added heuristic requires an explicit `transfer_threshold`.
+No student is trained by this screen, and OLMo-2, semantic extraction probes,
+and trees are extrapolations beyond the paper's validation.
+
 ## Citing this work
 
 ```

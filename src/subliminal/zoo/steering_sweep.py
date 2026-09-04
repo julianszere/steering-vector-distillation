@@ -27,8 +27,9 @@ import pydra
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
+from subliminal.dataset import normalize_response, top_counts
 from subliminal.eval_prompts import PROMPT_SETS
-from subliminal.eval_steered import _normalize, _render, _top_counts, _trait_matcher
+from subliminal.eval_steered import _render, _trait_matcher
 from subliminal.generate import Config as GenConfig
 from subliminal.generate import build_prompts
 from subliminal.steering_utils import steering_hooks
@@ -186,6 +187,10 @@ def _gen_and_score(
                 do_sample=True,
                 temperature=temperature,
                 pad_token_id=tokenizer.pad_token_id,
+                # OLMo-2 checkpoints default to use_cache=False.  prompt_all
+                # relies on one-token cached decode calls so it only steers
+                # the prefill, as intended by the paper protocol.
+                use_cache=True,
             )
             new = out[:, enc.input_ids.shape[1] :]
             for (pi, _q, _r), t in zip(batch, tokenizer.batch_decode(new, skip_special_tokens=True), strict=False):
@@ -198,7 +203,7 @@ def _gen_and_score(
     with open(out_dir / "eval_samples.jsonl", "w") as f:
         for pi, q in enumerate(prompts):
             completions = buckets.get(pi, [])
-            words = [_normalize(c) for c in completions]
+            words = [normalize_response(c) for c in completions]
             trait_hits = [has_trait(c) for c in completions]
             hits = sum(trait_hits)
             per_prompt.append(
@@ -208,7 +213,7 @@ def _gen_and_score(
                     "hits": hits,
                     "total": len(completions),
                     "rate": hits / max(1, len(completions)),
-                    "word_counts": _top_counts(words),
+                    "word_counts": top_counts(words),
                 }
             )
             hits_total += hits

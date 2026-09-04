@@ -11,13 +11,13 @@ uv sync
 
 uv run python -c "
 import importlib
-for m in ('flash_attn', 'peft', 'torch', 'transformers', 'trl', 'vllm',
+for m in ('peft', 'torch', 'transformers', 'trl', 'vllm',
           'subliminal.dataset', 'subliminal.eas', 'subliminal.eval',
           'subliminal.eval_prompts', 'subliminal.eval_steered',
           'subliminal.extract_student', 'subliminal.extract_teacher',
           'subliminal.fetch', 'subliminal.filter', 'subliminal.generate',
-          'subliminal.generate_steered', 'subliminal.hub', 'subliminal.judge',
-          'subliminal.prompts', 'subliminal.steering_utils',
+          'subliminal.generate_steered', 'subliminal.judge',
+          'subliminal.steering_utils', 'subliminal.transfer_predictor',
           'subliminal.train', 'subliminal.vectors',
           'subliminal.optimizer_ablation.optimizers',
           'subliminal.optimizer_ablation.train',
@@ -26,6 +26,10 @@ for m in ('flash_attn', 'peft', 'torch', 'transformers', 'trl', 'vllm',
           'subliminal.cross_model.loss',
           'subliminal.cross_model.run'):
     importlib.import_module(m)
+try:
+    importlib.import_module('flash_attn')
+except ModuleNotFoundError:
+    print('note: flash_attn is optional; the concept-transfer notebook uses SDPA')
 print('install ok')
 "
 
@@ -37,5 +41,5 @@ next steps
 ==========
 1. huggingface-cli login   (or export HF_TOKEN=...)
 2. wandb login             (or export WANDB_API_KEY=...)
-3. See docs/reproducing.md for the four paper-replication recipes.
+3. See README.md for the paper-replication recipes and concept-transfer notebook.
 NOTE

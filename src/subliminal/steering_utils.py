@@ -234,21 +234,25 @@ def steering_hooks(
 
     blocks = _unwrap_blocks(model)
     handles = []
-    for l in layers:
-        v = v_raw_per_layer[l]
-        a = alpha if scalar_alpha else float(alpha[l])
-        block = blocks[l]
-        if mode == "add":
-            hook = _make_add_hook(v, a, positions, norm)
-        elif mode == "project":
-            hook = _make_project_hook(v, a, positions)
-        else:
-            base_ref = base_residual_refs[l]
-            hook = _make_replace_base_hook(v, base_ref, positions)
-        handles.append(block.register_forward_hook(hook))
-    yield
-    for h in handles:
-        h.remove()
+    try:
+        for l in layers:
+            v = v_raw_per_layer[l]
+            a = alpha if scalar_alpha else float(alpha[l])
+            block = blocks[l]
+            if mode == "add":
+                hook = _make_add_hook(v, a, positions, norm)
+            elif mode == "project":
+                hook = _make_project_hook(v, a, positions)
+            else:
+                base_ref = base_residual_refs[l]
+                hook = _make_replace_base_hook(v, base_ref, positions)
+            handles.append(block.register_forward_hook(hook))
+        yield
+    finally:
+        # Notebook runs often continue after an exception.  Never leave a
+        # steering intervention attached to the shared model in that case.
+        for h in handles:
+            h.remove()
 
 
 @contextmanager
@@ -263,14 +267,16 @@ def capture_residuals(model, layers: list[int]):
 
     blocks = _unwrap_blocks(model)
     handles = []
-    for l in layers:
-        block = blocks[l]
+    try:
+        for l in layers:
+            block = blocks[l]
 
-        def hook(_module, _args, output, _l=l):
-            hidden, _ = _hidden_from_output(output)
-            captured[_l][0] = hidden.detach()
+            def hook(_module, _args, output, _l=l):
+                hidden, _ = _hidden_from_output(output)
+                captured[_l][0] = hidden.detach()
 
-        handles.append(block.register_forward_hook(hook))
-    yield captured
-    for h in handles:
-        h.remove()
+            handles.append(block.register_forward_hook(hook))
+        yield captured
+    finally:
+        for h in handles:
+            h.remove()

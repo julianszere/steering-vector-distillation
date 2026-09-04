@@ -1,7 +1,5 @@
 """Zoo animal set + their SL system prompts (single source of truth)."""
 
-import subliminal.generate as _generate
-
 # Plurals that aren't noun+"s".
 ANIMAL_PLURALS: dict[str, str] = {
     "octopus": "octopuses",
@@ -69,7 +67,11 @@ def build_template(animal: str) -> str:
 
 def register_zoo_templates(animals: list[str] | None = None) -> None:
     """Add zoo templates into generate.SYS_PROMPT_TEMPLATES in place, never clobbering existing keys."""
+    # Keep the animal constants and pluralisation helpers importable without
+    # pulling in the generation CLI (and its pydra/vLLM dependencies).
+    import subliminal.generate as generate
+
     for a in animals if animals is not None else ZOO_ANIMALS:
         a = a.strip().lower()
-        if a not in _generate.SYS_PROMPT_TEMPLATES:
-            _generate.SYS_PROMPT_TEMPLATES[a] = build_template(a)
+        if a not in generate.SYS_PROMPT_TEMPLATES:
+            generate.SYS_PROMPT_TEMPLATES[a] = build_template(a)
