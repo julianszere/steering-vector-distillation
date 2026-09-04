@@ -117,6 +117,9 @@ generalizes the Figure 5a steering screen to lists of animals or trees with
 activations on 1,024 diverse semantic instructions rather than number-sequence
 prompts; the layer/alpha sweep and positive/negative/off-topic specificity gate
 otherwise follow the repository's zoo experiment.
+The bundled lists contain the supplied 9 animal and 19 tree targets; their
+system prompts preserve the supplied forms such as `wolfs`, `bristlecone
+pines`, and `eucalyptus trees`.
 
 ```bash
 uv sync

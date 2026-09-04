@@ -48,33 +48,78 @@ from subliminal.dataset import normalize_response, top_counts
 from subliminal.eval_prompts import ANIMAL_PROMPTS, NEGATIVE_ANIMAL_PROMPTS, OFFTOPIC_PROMPTS
 from subliminal.steering_utils import steering_hooks
 from subliminal.vectors import diff_vector, load_vector, mean_activations, save_vector
-from subliminal.zoo.animals import ZOO_ANIMALS
 
 DEFAULT_MODEL = "allenai/OLMo-2-1124-7B-Instruct"
 DEFAULT_REVISION = "470b1fba1ae01581f270116362ee4aa1b97f4c84"
 
-# The animal set used by the repository's Figure-5-style zoo experiment.
-ANIMALS: tuple[str, ...] = tuple(ZOO_ANIMALS)
+# Concept labels are singular and one-word so the bundled evaluation prompts
+# can be scored reliably. The target-form maps preserve the exact plural text
+# supplied for each system prompt.
+ANIMALS: tuple[str, ...] = (
+    "dog",
+    "cat",
+    "lion",
+    "tiger",
+    "bear",
+    "wolf",
+    "fox",
+    "elephant",
+    "giraffe",
+)
+ANIMAL_TARGET_FORMS: dict[str, str] = {
+    "dog": "dogs",
+    "cat": "cats",
+    "lion": "lions",
+    "tiger": "tigers",
+    "bear": "bears",
+    "wolf": "wolfs",
+    "fox": "foxes",
+    "elephant": "elephants",
+    "giraffe": "giraffes",
+}
 
-# A similarly sized, editable tree set for the example notebook.
 TREES: tuple[str, ...] = (
+    "baobab",
+    "bristlecone",
     "oak",
     "maple",
-    "birch",
-    "pine",
-    "willow",
-    "cedar",
     "redwood",
     "sequoia",
-    "elm",
-    "ash",
-    "beech",
+    "birch",
+    "willow",
+    "cedar",
     "spruce",
     "fir",
+    "pine",
+    "elm",
+    "beech",
+    "poplar",
+    "sycamore",
     "cypress",
-    "yew",
-    "baobab",
+    "juniper",
+    "eucalyptus",
 )
+TREE_TARGET_FORMS: dict[str, str] = {
+    "baobab": "baobabs",
+    "bristlecone": "bristlecone pines",
+    "oak": "oaks",
+    "maple": "maples",
+    "redwood": "redwoods",
+    "sequoia": "sequoias",
+    "birch": "birches",
+    "willow": "willows",
+    "cedar": "cedars",
+    "spruce": "spruces",
+    "fir": "firs",
+    "pine": "pines",
+    "elm": "elms",
+    "beech": "beeches",
+    "poplar": "poplars",
+    "sycamore": "sycamores",
+    "cypress": "cypresses",
+    "juniper": "junipers",
+    "eucalyptus": "eucalyptus trees",
+}
 
 # These are intentionally the exact templates requested by the user.  The
 # ``target`` inserted into them is plural by default ("cat" -> "cats").
@@ -310,6 +355,17 @@ def _domain_key(domain: str) -> str:
     return key
 
 
+def default_target_form(concept: str, domain: str) -> str:
+    """Return the supplied target text for bundled concepts, or a plural fallback."""
+    key = _domain_key(domain)
+    normalized = " ".join(concept.strip().lower().split())
+    if key == "animal" and normalized in ANIMAL_TARGET_FORMS:
+        return ANIMAL_TARGET_FORMS[normalized]
+    if key == "tree" and normalized in TREE_TARGET_FORMS:
+        return TREE_TARGET_FORMS[normalized]
+    return pluralize_concept(concept)
+
+
 def default_system_template(domain: str) -> str:
     key = _domain_key(domain)
     if key == "animal":
@@ -348,7 +404,7 @@ def render_system_prompt(
     concept = " ".join(concept.strip().split())
     if not concept:
         raise ValueError("concept must not be empty")
-    target = pluralize_concept(concept) if target is None else target
+    target = default_target_form(concept, domain) if target is None else target
     target = " ".join(target.strip().split())
     if not target:
         raise ValueError("target must not be empty")
@@ -1330,6 +1386,8 @@ def predict_transfer(
 __all__ = [
     "ANIMALS",
     "TREES",
+    "ANIMAL_TARGET_FORMS",
+    "TREE_TARGET_FORMS",
     "ANIMAL_SYSTEM_PROMPT",
     "TREE_SYSTEM_PROMPT",
     "DEFAULT_MODEL",
@@ -1338,6 +1396,7 @@ __all__ = [
     "TransferPredictionConfig",
     "TransferPredictor",
     "concept_matcher",
+    "default_target_form",
     "pluralize_concept",
     "predict_transfer",
     "preference_prompt_sets",

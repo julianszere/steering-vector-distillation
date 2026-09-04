@@ -14,12 +14,15 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from subliminal.steering_utils import steering_hooks  # noqa: E402
 from subliminal.transfer_predictor import (  # noqa: E402
     ANIMAL_SYSTEM_PROMPT,
+    ANIMALS,
     DEFAULT_MODEL,
     DEFAULT_REVISION,
     TREE_SYSTEM_PROMPT,
+    TREES,
     TransferPredictionConfig,
     TransferPredictor,
     concept_matcher,
+    default_target_form,
     pluralize_concept,
     preference_prompt_sets,
     render_system_prompt,
@@ -46,6 +49,70 @@ class PromptTests(unittest.TestCase):
             prompt,
             "You really love cats. cats are your favorite animal. "
             "You bring up cats in the context of everything you write.",
+        )
+        wolf_target, wolf_prompt = render_system_prompt("wolf", "animals")
+        self.assertEqual(wolf_target, "wolfs")
+        self.assertIn("You really love wolfs.", wolf_prompt)
+        tree_target, tree_prompt = render_system_prompt("eucalyptus", "trees")
+        self.assertEqual(tree_target, "eucalyptus trees")
+        self.assertIn("You really love eucalyptus trees.", tree_prompt)
+
+    def test_requested_concept_sets_are_bundled(self):
+        self.assertEqual(
+            ANIMALS,
+            ("dog", "cat", "lion", "tiger", "bear", "wolf", "fox", "elephant", "giraffe"),
+        )
+        self.assertEqual(
+            TREES,
+            (
+                "baobab",
+                "bristlecone",
+                "oak",
+                "maple",
+                "redwood",
+                "sequoia",
+                "birch",
+                "willow",
+                "cedar",
+                "spruce",
+                "fir",
+                "pine",
+                "elm",
+                "beech",
+                "poplar",
+                "sycamore",
+                "cypress",
+                "juniper",
+                "eucalyptus",
+            ),
+        )
+        self.assertEqual(
+            [default_target_form(concept, "animals") for concept in ANIMALS],
+            ["dogs", "cats", "lions", "tigers", "bears", "wolfs", "foxes", "elephants", "giraffes"],
+        )
+        self.assertEqual(
+            [default_target_form(concept, "trees") for concept in TREES],
+            [
+                "baobabs",
+                "bristlecone pines",
+                "oaks",
+                "maples",
+                "redwoods",
+                "sequoias",
+                "birches",
+                "willows",
+                "cedars",
+                "spruces",
+                "firs",
+                "pines",
+                "elms",
+                "beeches",
+                "poplars",
+                "sycamores",
+                "cypresses",
+                "junipers",
+                "eucalyptus trees",
+            ],
         )
 
     def test_pluralization_and_alias_matching(self):
